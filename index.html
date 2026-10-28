@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secure File Vault - Cryptographic Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Dynamic Palette variables with defaults */
+  --p-primary: #6366f1;
+  --p-primary-rgb: 99, 102, 241;
+  --p-secondary: #06b6d4;
+  --p-secondary-rgb: 6, 182, 212;
+  --p-accent: #f59e0b;
+  --p-accent-rgb: 245, 158, 11;
+  
+  --grad-angle: 135deg;
+  --bg-gradient: linear-gradient(var(--grad-angle), rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.1) 50%, rgba(15, 23, 42, 0) 100%);
+  --brand-gradient: linear-gradient(135deg, var(--p-primary) 0%, var(--p-secondary) 100%);
+  --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+
+  /* Dark theme tokens (default) */
+  --bg-base: #090d16;
+  --bg-surface: rgba(17, 24, 39, 0.75);
+  --bg-surface-elevated: rgba(30, 41, 59, 0.7);
+  --bg-input: rgba(15, 23, 42, 0.8);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --ink: #f8fafc;
+  --ink-soft: #94a3b8;
+  --mute: #64748b;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --panel: rgba(15, 23, 42, 0.75);
+  --panel-solid: #0f172a;
+  --steel: #1e293b;
+  --brass: #eab308;
+  --ok: #10b981;
+  --ok-bg: rgba(16, 185, 129, 0.12);
+  --bad: #f43f5e;
+  --bad-bg: rgba(244, 63, 94, 0.14);
+  --r: 16px;
+  --r-sm: 10px;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  --glass-blur: blur(16px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] {
+  --bg-base: #f1f5f9;
+  --bg-surface: rgba(255, 255, 255, 0.85);
+  --bg-surface-elevated: rgba(248, 250, 252, 0.95);
+  --bg-input: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --mute: #64748b;
+  --line: rgba(0, 0, 0, 0.09);
+  --line-strong: rgba(0, 0, 0, 0.16);
+  --panel: rgba(255, 255, 255, 0.9);
+  --panel-solid: #ffffff;
+  --steel: #334155;
+  --brass: #b45309;
+  --ok: #059669;
+  --ok-bg: #ecfdf5;
+  --bad: #e11d48;
+  --bad-bg: #fff1f2;
+  --bg-gradient: linear-gradient(var(--grad-angle), rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 50%, rgba(241, 245, 249, 0) 100%);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+body {
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-base);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--ink);
+  line-height: 1.6;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -10vw;
+  right: -10vw;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(var(--p-primary-rgb), 0.18) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -10vw;
+  left: -10vw;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(var(--p-secondary-rgb), 0.14) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+}
+
+button, input, select {
+  font: inherit;
+}
+.hidden {
+  display: none !important;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: var(--glass-border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 19px;
+  box-shadow: 0 4px 14px rgba(var(--p-primary-rgb), 0.35);
+}
+
+header h1 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+header .who {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  background: var(--bg-hover);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+header .who::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+  display: inline-block;
+  box-shadow: 0 0 8px var(--ok);
+}
+
+.theme-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.theme-trigger-btn:hover {
+  background: rgba(var(--p-primary-rgb), 0.15);
+  border-color: rgba(var(--p-primary-rgb), 0.3);
+  transform: translateY(-1px);
+}
+
+.mode-toggle-btn {
+  background: var(--bg-hover);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+}
+.mode-toggle-btn:hover {
+  background: rgba(var(--p-primary-rgb), 0.15);
+  border-color: rgba(var(--p-primary-rgb), 0.3);
+  transform: translateY(-1px);
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 32px auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: var(--panel);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--r);
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--brand-gradient);
+  opacity: 0.8;
+}
+
+.auth {
+  max-width: 420px;
+  margin: 50px auto;
+  padding: 36px 32px;
+}
+.auth h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sub {
+  color: var(--mute);
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 16px 0 6px;
+  letter-spacing: 0.01em;
+}
+
+input[type=text], input[type=password] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  color: var(--ink);
+  font-size: 14.5px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+}
+input[type=text]:focus, input[type=password]:focus {
+  outline: none;
+  border-color: var(--p-primary);
+  box-shadow: 0 0 0 3px rgba(var(--p-primary-rgb), 0.25);
+  background: var(--bg-surface);
+}
+
+.btn {
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: 11px 20px;
+  background: var(--brand-gradient);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(var(--p-primary-rgb), 0.35);
+  position: relative;
+  overflow: hidden;
+}
+.btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(var(--p-primary-rgb), 0.45);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.btn.brass {
+  background: linear-gradient(135deg, var(--p-accent) 0%, #ea580c 100%);
+  box-shadow: 0 4px 14px rgba(var(--p-accent-rgb), 0.35);
+}
+.btn.brass:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 18px rgba(var(--p-accent-rgb), 0.45);
+}
+
+.btn.ghost {
+  background: var(--bg-hover);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.btn.ghost:hover {
+  background: rgba(var(--p-primary-rgb), 0.15);
+  border-color: var(--p-primary);
+  color: var(--ink);
+}
+
+.btn.sm {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.btn.danger {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--bad);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  box-shadow: none;
+}
+.btn.danger:hover {
+  background: var(--bad);
+  color: #fff;
+  border-color: var(--bad);
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+}
+
+.btn.full {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  font-size: 15px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: var(--bg-surface);
+  backdrop-filter: var(--glass-blur);
+  padding: 6px;
+  border-radius: 14px;
+  border: var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.tab {
+  background: none;
+  border: 0;
+  padding: 10px 18px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--ink);
+  background: var(--bg-hover);
+}
+.tab.on {
+  color: #fff;
+  background: var(--brand-gradient);
+  box-shadow: 0 4px 12px rgba(var(--p-primary-rgb), 0.35);
+}
+
+.drop {
+  border: 2px dashed rgba(var(--p-primary-rgb), 0.3);
+  border-radius: var(--r);
+  padding: 38px 24px;
+  text-align: center;
+  color: var(--mute);
+  cursor: pointer;
+  background: var(--bg-surface-elevated);
+  position: relative;
+  transition: all 0.25s ease;
+}
+.drop:hover, .drop.over {
+  border-color: var(--p-primary);
+  background: rgba(var(--p-primary-rgb), 0.08);
+  transform: scale(1.005);
+}
+.drop b {
+  color: var(--ink);
+  font-size: 16px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.msg {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+.msg.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.msg.bad {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+.steps {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 22px;
+  font-size: 12.5px;
+  color: var(--mute);
+  flex-wrap: wrap;
+}
+.steps span {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-surface-elevated);
+  font-weight: 500;
+}
+.steps span.on {
+  background: var(--brand-gradient);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(var(--p-primary-rgb), 0.3);
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+}
+th, td {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--line);
+}
+th {
+  color: var(--mute);
+  font-weight: 600;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--bg-hover);
+}
+th:first-child { border-top-left-radius: 8px; }
+th:last-child { border-top-right-radius: 8px; }
+tr:hover td {
+  background: var(--bg-hover);
+}
+td.act {
+  white-space: nowrap;
+  text-align: right;
+}
+.empty {
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--mute);
+}
+
+.meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.meter i {
+  display: block;
+  height: 100%;
+  width: 0;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+}
+
+.tech {
+  font-size: 13px;
+  color: var(--mute);
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  border: var(--glass-border);
+  line-height: 1.6;
+}
+.link {
+  background: none;
+  border: 0;
+  color: var(--p-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+}
+
+/* Theme & Gradient Customization Studio Panel Modal */
+.theme-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.theme-panel-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.theme-panel {
+  background: var(--panel-solid);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--r);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 26px;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.theme-panel-backdrop.open .theme-panel {
+  transform: translateY(0) scale(1);
+}
+
+.theme-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.theme-panel-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.preset-btn {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.preset-btn:hover {
+  border-color: var(--p-primary);
+  transform: translateY(-2px);
+}
+.preset-swatch {
+  height: 28px;
+  border-radius: 6px;
+  width: 100%;
+}
+.preset-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.custom-picker-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.picker-item label {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+}
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-hover);
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.color-input-wrapper input[type="color"] {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.color-input-wrapper span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.slider-group {
+  margin-bottom: 20px;
+}
+.slider-group-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.slider-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--p-primary);
+}
+
+.gradient-preview-box {
+  height: 56px;
+  border-radius: 10px;
+  background: var(--brand-gradient);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-panel-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-wrapper">
+    <div class="brand-icon">🔐</div>
+    <h1>Secure File Vault</h1>
+  </div>
+  
+  <div class="header-actions">
+    <button class="theme-trigger-btn" id="openThemeStudio" title="Customize Themes and Gradients">
+      <span>🎨</span> Theme & Colors
+    </button>
+    <button class="mode-toggle-btn" id="quickModeToggle" title="Toggle Light/Dark Theme">
+      <span id="modeIcon">☀️</span>
+    </button>
+    <span class="who hidden" id="who"></span>
+    <button class="btn ghost sm hidden" id="logout">Log out</button>
+  </div>
+</header>
+
+<!-- THEME & GRADIENT CUSTOMIZER MODAL -->
+<div class="theme-panel-backdrop" id="themeModalBackdrop">
+  <div class="theme-panel">
+    <div class="theme-panel-header">
+      <h3><span>✨</span> Theme & Gradient Studio</h3>
+      <button class="btn ghost sm" id="closeThemeStudio">✕</button>
+    </div>
+
+    <div style="margin-bottom: 18px;">
+      <label style="margin-top:0;">Appearance Mode</label>
+      <div style="display:flex; gap:10px; margin-top:6px;">
+        <button class="btn ghost sm" style="flex:1; justify-content:center;" id="setThemeDark">🌙 Dark Theme</button>
+        <button class="btn ghost sm" style="flex:1; justify-content:center;" id="setThemeLight">☀️ Light Theme</button>
+      </div>
+    </div>
+
+    <label style="margin-top:16px;">Curated Theme Presets</label>
+    <div class="preset-grid">
+      <div class="preset-btn" data-p1="#6366f1" data-p2="#06b6d4" data-acc="#f59e0b" data-name="Cyber Neon">
+        <div class="preset-swatch" style="background: linear-gradient(135deg, #6366f1, #06b6d4);"></div>
+        <div class="preset-title">Cyber Neon</div>
+      </div>
+      <div class="preset-btn" data-p1="#8b5cf6" data-p2="#ec4899" data-acc="#10b981" data-name="Velvet Sunset">
+        <div class="preset-swatch" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);"></div>
+        <div class="preset-title">Velvet Sunset</div>
+      </div>
+      <div class="preset-btn" data-p1="#059669" data-p2="#10b981" data-acc="#3b82f6" data-name="Emerald Matrix">
+        <div class="preset-swatch" style="background: linear-gradient(135deg, #059669, #10b981);"></div>
+        <div class="preset-title">Emerald Matrix</div>
+      </div>
+      <div class="preset-btn" data-p1="#0284c7" data-p2="#38bdf8" data-acc="#f59e0b" data-name="Ocean Deep">
+        <div class="preset-swatch" style="background: linear-gradient(135deg, #0284c7, #38bdf8);"></div>
+        <div class="preset-title">Ocean Deep</div>
+      </div>
+      <div class="preset-btn" data-p1="#ea580c" data-p2="#f59e0b" data-acc="#6366f1" data-name="Solar Flare">
+        <div class="preset-swatch" style="background: linear-gradient(135deg, #ea580c, #f59e0b);"></div>
+        <div class="preset-title">Solar Flare</div>
+      </div>
+      <div class="preset-btn" data-p1="#1e293b" data-p2="#475569" data-acc="#b8862b" data-name="Vault Classic">
+        <div class="preset-swatch" style="background: linear-gradient(135deg, #1e293b, #475569);"></div>
+        <div class="preset-title">Vault Classic</div>
+      </div>
+    </div>
+
+    <label>Custom Gradient Colors</label>
+    <div class="custom-picker-section">
+      <div class="picker-item">
+        <label>Primary Color</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="customColor1" value="#6366f1">
+          <span id="customColor1Hex">#6366f1</span>
+        </div>
+      </div>
+      <div class="picker-item">
+        <label>Secondary Color</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="customColor2" value="#06b6d4">
+          <span id="customColor2Hex">#06b6d4</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-group-header">
+        <span>Gradient Angle</span>
+        <span id="gradientAngleVal">135°</span>
+      </div>
+      <input type="range" id="gradientAngleSlider" min="0" max="360" value="135">
+    </div>
+
+    <div class="gradient-preview-box" id="themePreviewBox">
+      ACTIVE GRADIENT PREVIEW
+    </div>
+
+    <div class="theme-panel-actions">
+      <button class="btn ghost sm" id="resetThemeBtn">Reset Default</button>
+      <button class="btn sm" id="saveThemeBtn">Apply & Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div class="wrap" id="authView">
+  <div class="card auth">
+    <h2 id="authTitle">Log in</h2>
+    <p class="sub" id="authSub">Open your vault.</p>
+    <label for="u">Username</label><input type="text" id="u" autocomplete="username" placeholder="Enter your username">
+    <label for="p">Password</label><input type="password" id="p" autocomplete="current-password" placeholder="Enter your password">
+    <button class="btn full" id="authBtn">Log in</button>
+    <div class="msg bad hidden" id="authMsg"></div>
+    <p class="sub" style="margin:18px 0 0;font-size:13px"><span id="authSwitchTxt">No account?</span> <button class="link" id="authSwitch">Register</button></p>
+    <p class="sub" style="font-size:12px;margin-top:4px;">The first account registered becomes the admin.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="wrap hidden" id="appView">
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="enc">Encrypt</button>
+    <button class="tab" data-t="dec">Decrypt</button>
+    <button class="tab" data-t="hist">My files</button>
+    <button class="tab" data-t="log">Activity log</button>
+    <button class="tab hidden" data-t="admin" id="adminTab">Admin</button>
+  </div>
+
+  <div class="card" id="enc">
+    <div class="steps"><span class="on">1 Select file</span><span>2 Enter password</span><span>3 Encrypt</span><span>4 .enc saved</span></div>
+    <div class="drop" id="encDrop"><b id="encName">Select a file</b><br>or drag and drop it here. PDF, DOCX, JPG, PNG, XLSX, ZIP, MP3 and more.</div>
+    <input type="file" id="encFile" class="hidden">
+    <label for="encKey">Encryption password</label>
+    <input type="password" id="encKey" autocomplete="new-password" placeholder="Minimum 8 characters">
+    <div class="meter"><i id="meter"></i></div><div class="sub" id="meterTxt" style="font-size:12px;margin:6px 0 0"></div>
+    <button class="btn brass full" id="encBtn">🔒 Encrypt</button>
+    <div class="msg hidden" id="encMsg"></div>
+  </div>
+
+  <div class="card hidden" id="dec">
+    <div class="steps"><span class="on">1 Select .enc file</span><span>2 Enter password</span><span>3 Decrypt</span><span>4 Original restored</span></div>
+    <div class="drop" id="decDrop"><b id="decName">Select an encrypted .enc file</b><br>or drag and drop it here.</div>
+    <input type="file" id="decFile" class="hidden" accept=".enc">
+    <label for="decKey">Password used to encrypt</label>
+    <input type="password" id="decKey" autocomplete="off" placeholder="Enter the original file password">
+    <button class="btn full" id="decBtn">🔓 Decrypt</button>
+    <div class="msg hidden" id="decMsg"></div>
+  </div>
+
+  <div class="card hidden" id="hist">
+    <table><thead><tr><th>Encrypted file</th><th>Original</th><th>Size</th><th>Date</th><th></th></tr></thead><tbody id="histBody"></tbody></table>
+    <div class="msg hidden" id="histMsg"></div>
+  </div>
+
+  <div class="card hidden" id="log">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap"><button class="btn brass sm" id="verifyLog">Verify log integrity</button><span id="verifyRes" style="font-size:14px;font-weight:600;"></span></div>
+    <table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Chain hash</th></tr></thead><tbody id="logBody"></tbody></table>
+  </div>
+
+  <div class="card hidden" id="admin">
+    <h3 style="margin-top:0;font-size:18px;">Users Management</h3>
+    <table><thead><tr><th>Username</th><th>Role</th><th>Files</th><th>Joined</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
+  </div>
+
+  <p class="tech">AES-256-GCM encryption with a key derived from your password (PBKDF2-SHA256, 250,000 rounds, random salt and IV per file). The activity log is hash-chained (SHA-256), so edits to past entries are detected. Everything runs locally in your browser; files never leave your device. If you forget the password, the file cannot be recovered.</p>
+</div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id), enc=new TextEncoder(), dec=new TextDecoder();
+const MAGIC=[0x53,0x46,0x56,0x31]; // "SFV1"
+const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+let me=null, authMode="login";
+
+/* ---------- helpers ---------- */
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const fmt=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(1)+" MB";
+const when=t=>new Date(t).toLocaleString();
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function say(id,text,ok){const e=$(id);e.className="msg "+(ok?"ok":"bad");e.textContent=text}
+
+/* ---------- crypto ---------- */
+async function deriveKey(pw,salt,usage,iter=250000){
+  const base=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,usage);
+}
+async function hashPw(pw,salt){
+  const base=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveBits"]);
+  return b64(await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},base,256));
+}
+async function encryptBuf(buf,pw){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(pw,salt,["encrypt"]);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,buf));
+  const out=new Uint8Array(4+16+12+ct.length);
+  out.set(MAGIC);out.set(salt,4);out.set(iv,20);out.set(ct,32);return out;
+}
+async function decryptBuf(buf,pw){
+  const d=new Uint8Array(buf);
+  if(d.length<48||MAGIC.some((m,i)=>d[i]!==m))throw new Error("This is not a file made by Secure File Vault.");
+  const key=await deriveKey(pw,d.slice(4,20),["decrypt"]);
+  try{return await crypto.subtle.decrypt({name:"AES-GCM",iv:d.slice(20,32)},key,d.slice(32))}
+  catch{throw new Error("Wrong password, or the file was changed.")}
+}
+function save(data,name){
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data]));a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+/* ---------- IndexedDB (stores encrypted blobs only) ---------- */
+const db=new Promise((res,rej)=>{const r=indexedDB.open("vault",1);r.onupgradeneeded=()=>r.result.createObjectStore("blobs");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const idb=async(mode,fn)=>{const d=await db;return new Promise((res,rej)=>{const s=d.transaction("blobs",mode).objectStore("blobs"),q=fn(s);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})};
+
+/* ---------- data (Users / Files / Activity_Log) ---------- */
+const users=()=>ls.get("users",[]), files=()=>ls.get("files",[]), logs=()=>ls.get("logs",[]);
+const sha=async d=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",typeof d==="string"?enc.encode(d):d))].map(b=>b.toString(16).padStart(2,"0")).join("");
+let logChain=Promise.resolve();
+function log(action,uid=me?.user_id,uname=me?.username){
+  const e={log_id:Date.now(),user_id:uid,username:uname,action,timestamp:Date.now()};
+  logChain=logChain.then(async()=>{const l=logs();e.prev=l[0]?.hash||"0";e.hash=await sha(e.prev+e.log_id+e.user_id+e.action+e.timestamp);l.unshift(e);ls.set("logs",l.slice(0,500))});
+}
+async function verifyLog(){
+  await logChain;const l=logs().filter(e=>e.hash).reverse();
+  for(let i=0;i<l.length;i++){const e=l[i];
+    if(await sha(e.prev+e.log_id+e.user_id+e.action+e.timestamp)!==e.hash||(i>0&&e.prev!==l[i-1].hash))return{ok:false,at:e};}
+  return{ok:true,n:l.length};
+}
+async function pwned(pw){try{const h=(await sha(pw)).toUpperCase(),r=await fetch("https://api.pwnedpasswords.com/range/"+h.slice(0,5),{headers:{"Add-Padding":"true"}});if(!r.ok)return -1;
+  for(const line of (await r.text()).split("\n")){const[x,c]=line.trim().split(":");if(x===h.slice(5))return +c}return 0}catch{return -1}}
+function crackTime(v){
+  const p=(/[a-z]/.test(v)?26:0)+(/[A-Z]/.test(v)?26:0)+(/\d/.test(v)?10:0)+(/[^A-Za-z0-9]/.test(v)?33:0),bits=v.length*Math.log2(p||1),s=Math.pow(2,bits)/2e6;
+  let t="under a minute";
+  if(s>=3.15e19)t="trillions of years";else for(const[n,d]of [["years",31536000],["days",86400],["hours",3600],["minutes",60]])if(s>=d){t=Math.round(s/d).toLocaleString()+" "+n;break}
+  return "About "+Math.round(bits)+" bits. Rough offline guess time: "+t+".";
+}
+const MAXTRY=3;
+
+/* ---------- auth ---------- */
+function setMode(m){
+  authMode=m;const reg=m==="register";
+  $("authTitle").textContent=reg?"Create account":"Log in";
+  $("authSub").textContent=reg?"Choose a username and a login password.":"Open your vault.";
+  $("authBtn").textContent=reg?"Register":"Log in";
+  $("authSwitchTxt").textContent=reg?"Have an account?":"No account?";
+  $("authSwitch").textContent=reg?"Log in":"Register";
+  $("authMsg").classList.add("hidden");
+}
+$("authSwitch").onclick=()=>setMode(authMode==="login"?"register":"login");
+$("authBtn").onclick=async()=>{
+  const name=$("u").value.trim(),pw=$("p").value,m=$("authMsg");
+  const fail=t=>{m.textContent=t;m.classList.remove("hidden")};
+  if(!name||!pw)return fail("Enter a username and password.");
+  const list=users();
+  if(authMode==="register"){
+    if(pw.length<8)return fail("Use at least 8 characters.");
+    const pn=await pwned(pw);if(pn>0)return fail("This password appeared in "+pn.toLocaleString()+" known data breaches. Choose another.");
+    if(list.some(x=>x.username.toLowerCase()===name.toLowerCase()))return fail("That username is taken.");
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const u={user_id:Date.now(),username:name,salt:b64(salt),password_hash:await hashPw(pw,salt),role:list.length?"user":"admin",created:Date.now()};
+    list.push(u);ls.set("users",list);log("Registered",u.user_id,u.username);
+  }
+  const key=name.toLowerCase(),F=ls.get("fails",{}),st=F[key]||{n:0,until:0};
+  if(st.until>Date.now())return fail("Too many failed attempts. Try again in "+Math.ceil((st.until-Date.now())/1000)+" seconds.");
+  const u=users().find(x=>x.username.toLowerCase()===key);
+  if(!u||await hashPw(pw,unb64(u.salt))!==u.password_hash){
+    st.n++;if(st.n>=5){st.until=Date.now()+60000;st.n=0;log("LOCKOUT: 5 failed logins for "+name+", account locked 60s",0,name)}
+    F[key]=st;ls.set("fails",F);log("Failed login for "+name,0,name);return fail("Wrong username or password.")}
+  delete F[key];ls.set("fails",F);
+  me=u;sessionStorage.setItem("me",u.user_id);log("Logged in");enter();
+};
+[$("u"),$("p")].forEach(e=>e.addEventListener("keydown",k=>{if(k.key==="Enter")$("authBtn").click()}));
+$("logout").onclick=()=>{log("Logged out");me=null;sessionStorage.removeItem("me");$("p").value="";$("authView").classList.remove("hidden");$("appView").classList.add("hidden");$("who").classList.add("hidden");$("logout").classList.add("hidden")};
+function enter(){
+  $("authView").classList.add("hidden");$("appView").classList.remove("hidden");
+  $("who").textContent=me.username+" ("+me.role+")";$("who").classList.remove("hidden");$("logout").classList.remove("hidden");
+  $("adminTab").classList.toggle("hidden",me.role!=="admin");
+  showTab("enc");
+}
+
+/* ---------- tabs ---------- */
+function showTab(t){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  ["enc","dec","hist","log","admin"].forEach(id=>$(id).classList.toggle("hidden",id!==t));
+  if(t==="hist")renderHist();if(t==="log")renderLog();if(t==="admin")renderAdmin();
+}
+$("tabs").onclick=e=>{if(e.target.dataset.t)showTab(e.target.dataset.t)};
+
+/* ---------- file pickers ---------- */
+function wireDrop(drop,input,label,prompt){
+  drop.onclick=()=>input.click();
+  input.onchange=()=>{label.textContent=input.files[0]?input.files[0].name+" ("+fmt(input.files[0].size)+")":prompt};
+  drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")};
+  drop.ondragleave=()=>drop.classList.remove("over");
+  drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files[0]){input.files=e.dataTransfer.files;input.onchange()}};
+}
+wireDrop($("encDrop"),$("encFile"),$("encName"),"Select a file");
+wireDrop($("decDrop"),$("decFile"),$("decName"),"Select an encrypted .enc file");
+
+$("encKey").oninput=()=>{
+  const v=$("encKey").value;let s=0;
+  if(v.length>=8)s++;if(v.length>=12)s++;if(/[A-Z]/.test(v)&&/[a-z]/.test(v))s++;if(/\d/.test(v)&&/[^A-Za-z0-9]/.test(v))s++;
+  const m=$("meter");m.style.width=(v?s*25:0)+"%";m.style.background=["#b23a3a","#b23a3a","#b8862b","#7a9a2d","#2d7a4f"][v?s:0];
+  $("meterTxt").textContent=v?crackTime(v):"";
+};
+
+/* ---------- encrypt ---------- */
+$("encBtn").onclick=async()=>{
+  const f=$("encFile").files[0],pw=$("encKey").value;
+  if(!f)return say("encMsg","Select a file first.");
+  if(pw.length<8)return say("encMsg","Use a password of at least 8 characters.");
+  $("encBtn").disabled=true;say("encMsg","Checking password against known breaches…",true);
+  try{
+    const pn=await pwned(pw);
+    if(pn>0){say("encMsg","This password appeared in "+pn.toLocaleString()+" known data breaches. Choose a different one.");$("encBtn").disabled=false;return}
+    say("encMsg","Encrypting…",true);
+    const nameBytes=enc.encode(f.name),head=new Uint8Array(2+nameBytes.length);
+    new DataView(head.buffer).setUint16(0,nameBytes.length);head.set(nameBytes,2);
+    const body=new Uint8Array(await f.arrayBuffer()),plain=new Uint8Array(head.length+body.length);
+    plain.set(head);plain.set(body,head.length);
+    const out=await encryptBuf(plain,pw),encName=f.name+".enc",id=Date.now();
+    await idb("readwrite",s=>s.put(out,id));
+    const list=files();list.unshift({file_id:id,user_id:me.user_id,original_filename:f.name,encrypted_filename:encName,upload_date:id,file_size:f.size,sha:await sha(body),tries:0});ls.set("files",list);
+    log("Encrypted "+f.name);save(out,encName);
+    say("encMsg","Done. "+encName+" was downloaded and added to My files. Original fingerprint (SHA-256): "+files()[0].sha.slice(0,24)+"…",true);
+    $("encFile").value="";$("encKey").value="";$("encName").textContent="Select a file";$("meter").style.width=0;
+  }catch(e){say("encMsg","Encryption failed: "+e.message)}
+  $("encBtn").disabled=false;
+};
+
+/* ---------- decrypt ---------- */
+async function runDecrypt(buf,pw){
+  const plain=new Uint8Array(await decryptBuf(buf,pw)),n=new DataView(plain.buffer).getUint16(0);
+  return{name:dec.decode(plain.slice(2,2+n)),data:plain.slice(2+n)};
+}
+$("decBtn").onclick=async()=>{
+  const f=$("decFile").files[0],pw=$("decKey").value;
+  if(!f)return say("decMsg","Select an .enc file first.");
+  if(!pw)return say("decMsg","Enter the password.");
+  $("decBtn").disabled=true;say("decMsg","Decrypting…",true);
+  try{
+    const r=await runDecrypt(await f.arrayBuffer(),pw);
+    save(r.data,r.name);log("Decrypted "+r.name);
+    say("decMsg","Done. "+r.name+" was restored and downloaded.",true);$("decKey").value="";
+  }catch(e){log("Failed decrypt of "+f.name);say("decMsg",e.message)}
+  $("decBtn").disabled=false;
+};
+
+/* ---------- history ---------- */
+function renderHist(){
+  const rows=files().filter(f=>f.user_id===me.user_id);
+  $("histBody").innerHTML=rows.length?rows.map(f=>`<tr><td>📄 ${esc(f.encrypted_filename)}</td><td>${esc(f.original_filename)}<br><small style="color:var(--mute)">SHA-256 ${(f.sha||"").slice(0,12)}…</small></td><td>${fmt(f.file_size)}</td><td>${when(f.upload_date)}</td>
+    <td class="act"><button class="btn sm" data-d="${f.file_id}">Decrypt</button> <button class="btn danger sm" data-x="${f.file_id}">Delete</button></td></tr>`).join("")
+    :`<tr><td colspan="5" class="empty">No encrypted files yet. Encrypt a file and it will appear here.</td></tr>`;
+  $("histMsg").classList.add("hidden");
+}
+$("histBody").onclick=async e=>{
+  const d=e.target.dataset.d,x=e.target.dataset.x;
+  if(d){
+    const pw=prompt("Enter the password for this file:");if(!pw)return;
+    const rec=files().find(f=>f.file_id==d);
+    try{
+      const r=await runDecrypt(await idb("readonly",s=>s.get(+d)),pw),ok=!rec.sha||await sha(r.data)===rec.sha;
+      save(r.data,r.name);const L=files();L.find(f=>f.file_id==d).tries=0;ls.set("files",L);
+      log("Decrypted "+rec.original_filename);say("histMsg","Restored "+r.name+(ok?". Integrity verified: SHA-256 matches the original.":". Warning: fingerprint does not match."),ok);
+    }catch(err){
+      const L=files(),x2=L.find(f=>f.file_id==d);x2.tries=(x2.tries||0)+1;
+      if(x2.tries>=MAXTRY){
+        await idb("readwrite",s=>s.delete(+d));ls.set("files",L.filter(f=>f.file_id!=d));
+        log("SELF-DESTRUCT: "+rec.encrypted_filename+" destroyed after "+MAXTRY+" wrong passwords");renderHist();
+        say("histMsg","Too many wrong passwords. "+rec.encrypted_filename+" was permanently destroyed.");
+      }else{
+        ls.set("files",L);log("Failed decrypt of "+rec.encrypted_filename);
+        say("histMsg",err.message+" "+(MAXTRY-x2.tries)+" attempt(s) left before this file self-destructs.");
+      }
+    }
+  }
+  if(x){
+    const rec=files().find(f=>f.file_id==x);
+    if(!confirm("Delete "+rec.encrypted_filename+"? This cannot be undone."))return;
+    await idb("readwrite",s=>s.delete(+x));ls.set("files",files().filter(f=>f.file_id!=x));log("Deleted "+rec.encrypted_filename);renderHist();
+  }
+};
+
+/* ---------- logs & admin ---------- */
+$("verifyLog").onclick=async()=>{const r=await verifyLog(),e=$("verifyRes");
+  e.style.color=r.ok?"var(--ok)":"var(--bad)";
+  e.textContent=r.ok?"Log is intact. "+r.n+" entries chained and verified.":"TAMPERING DETECTED at entry: "+r.at.action+" ("+when(r.at.timestamp)+")"};
+async function renderLog(){await logChain;$("verifyRes").textContent="";
+  const rows=logs().filter(l=>me.role==="admin"||l.user_id===me.user_id).slice(0,100);
+  $("logBody").innerHTML=rows.length?rows.map(l=>`<tr><td>${when(l.timestamp)}</td><td>${esc(l.username||"-")}</td><td>${esc(l.action)}</td><td><code style="font-size:12px">${(l.hash||"legacy").slice(0,10)}</code></td></tr>`).join(""):`<tr><td colspan="4" class="empty">No activity yet.</td></tr>`;
+}
+function renderAdmin(){
+  $("userBody").innerHTML=users().map(u=>`<tr><td>${esc(u.username)}</td><td>${u.role}</td><td>${files().filter(f=>f.user_id===u.user_id).length}</td><td>${when(u.created)}</td>
+    <td class="act">${u.user_id===me.user_id?"":`<button class="btn danger sm" data-r="${u.user_id}">Remove</button>`}</td></tr>`).join("");
+}
+$("userBody").onclick=async e=>{
+  const id=e.target.dataset.r;if(!id)return;
+  const u=users().find(x=>x.user_id==id);
+  if(!confirm("Remove "+u.username+" and all their encrypted files?"))return;
+  for(const f of files().filter(f=>f.user_id==id))await idb("readwrite",s=>s.delete(f.file_id));
+  ls.set("files",files().filter(f=>f.user_id!=id));ls.set("users",users().filter(x=>x.user_id!=id));
+  log("Removed user "+u.username);renderAdmin();
+};
+
+/* ---------- restore session ---------- */
+(()=>{const id=sessionStorage.getItem("me"),u=users().find(x=>x.user_id==id);if(u){me=u;enter()}
+ if(!users().length)setMode("register")})();
+
+/* ---------- Theme & Gradient Customization Controller ---------- */
+(function(){
+  const hexToRgb = (hex) => {
+    let c = hex.replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    const num = parseInt(c, 16);
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+  };
+
+  const defaultTheme = {
+    mode: 'dark',
+    p1: '#6366f1',
+    p2: '#06b6d4',
+    accent: '#f59e0b',
+    angle: 135
+  };
+
+  let themeState = Object.assign({}, defaultTheme, ls.get('vault_theme', {}));
+
+  function applyTheme(s) {
+    document.documentElement.setAttribute('data-theme', s.mode);
+    const root = document.documentElement;
+    root.style.setProperty('--p-primary', s.p1);
+    root.style.setProperty('--p-primary-rgb', hexToRgb(s.p1));
+    root.style.setProperty('--p-secondary', s.p2);
+    root.style.setProperty('--p-secondary-rgb', hexToRgb(s.p2));
+    if (s.accent) {
+      root.style.setProperty('--p-accent', s.accent);
+      root.style.setProperty('--p-accent-rgb', hexToRgb(s.accent));
+    }
+    root.style.setProperty('--grad-angle', s.angle + 'deg');
+    root.style.setProperty('--brand-gradient', `linear-gradient(${s.angle}deg, ${s.p1} 0%, ${s.p2} 100%)`);
+
+    const icon = document.getElementById('modeIcon');
+    if (icon) icon.textContent = s.mode === 'dark' ? '☀️' : '🌙';
+
+    const pBox = document.getElementById('themePreviewBox');
+    if (pBox) pBox.style.background = `linear-gradient(${s.angle}deg, ${s.p1} 0%, ${s.p2} 100%)`;
+
+    const c1 = document.getElementById('customColor1'), c2 = document.getElementById('customColor2');
+    const c1Hex = document.getElementById('customColor1Hex'), c2Hex = document.getElementById('customColor2Hex');
+    const ang = document.getElementById('gradientAngleSlider'), angVal = document.getElementById('gradientAngleVal');
+
+    if (c1) c1.value = s.p1;
+    if (c2) c2.value = s.p2;
+    if (c1Hex) c1Hex.textContent = s.p1;
+    if (c2Hex) c2Hex.textContent = s.p2;
+    if (ang) ang.value = s.angle;
+    if (angVal) angVal.innerHTML = s.angle + '&deg;';
+
+    ls.set('vault_theme', s);
+  }
+
+  // Initial apply
+  applyTheme(themeState);
+
+  // Quick mode toggle
+  const quickToggle = document.getElementById('quickModeToggle');
+  if (quickToggle) {
+    quickToggle.onclick = () => {
+      themeState.mode = themeState.mode === 'dark' ? 'light' : 'dark';
+      applyTheme(themeState);
+    };
+  }
+
+  // Modal controls
+  const modal = document.getElementById('themeModalBackdrop');
+  const openBtn = document.getElementById('openThemeStudio');
+  const closeBtn = document.getElementById('closeThemeStudio');
+  const saveBtn = document.getElementById('saveThemeBtn');
+  const resetBtn = document.getElementById('resetThemeBtn');
+
+  if (openBtn && modal) {
+    openBtn.onclick = () => modal.classList.add('open');
+  }
+  if (closeBtn && modal) {
+    closeBtn.onclick = () => modal.classList.remove('open');
+  }
+  if (saveBtn && modal) {
+    saveBtn.onclick = () => modal.classList.remove('open');
+  }
+  if (modal) {
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.classList.remove('open');
+    };
+  }
+
+  // Mode buttons inside modal
+  const darkBtn = document.getElementById('setThemeDark');
+  const lightBtn = document.getElementById('setThemeLight');
+  if (darkBtn) darkBtn.onclick = () => { themeState.mode = 'dark'; applyTheme(themeState); };
+  if (lightBtn) lightBtn.onclick = () => { themeState.mode = 'light'; applyTheme(themeState); };
+
+  // Preset buttons
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.onclick = () => {
+      themeState.p1 = btn.dataset.p1;
+      themeState.p2 = btn.dataset.p2;
+      themeState.accent = btn.dataset.acc;
+      applyTheme(themeState);
+    };
+  });
+
+  // Color inputs
+  const c1 = document.getElementById('customColor1'), c2 = document.getElementById('customColor2');
+  const ang = document.getElementById('gradientAngleSlider');
+
+  if (c1) {
+    c1.oninput = () => {
+      themeState.p1 = c1.value;
+      applyTheme(themeState);
+    };
+  }
+  if (c2) {
+    c2.oninput = () => {
+      themeState.p2 = c2.value;
+      applyTheme(themeState);
+    };
+  }
+  if (ang) {
+    ang.oninput = () => {
+      themeState.angle = parseInt(ang.value, 10);
+      applyTheme(themeState);
+    };
+  }
+
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      themeState = Object.assign({}, defaultTheme);
+      applyTheme(themeState);
+    };
+  }
+})();
+</script>
+</body>
+</html>
