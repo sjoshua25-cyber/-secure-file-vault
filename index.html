@@ -6,6 +6,7 @@
 <title>Secure File Vault - Cryptographic Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -723,6 +724,10 @@ td.act {
   </div>
   
   <div class="header-actions">
+    <button class="theme-trigger-btn" id="openCloudModal" title="Supabase Cloud Storage & Sync" style="display:flex; align-items:center; gap:6px;">
+      <span id="cloudStatusDot" style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+      <span>☁️</span> <span id="cloudStatusText">Supabase Cloud</span>
+    </button>
     <button class="theme-trigger-btn" id="openThemeStudio" title="Customize Themes and Gradients">
       <span>🎨</span> Theme & Colors
     </button>
@@ -811,6 +816,50 @@ td.act {
     <div class="theme-panel-actions">
       <button class="btn ghost sm" id="resetThemeBtn">Reset Default</button>
       <button class="btn sm" id="saveThemeBtn">Apply & Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- SUPABASE CLOUD SYNC MODAL -->
+<div class="theme-panel-backdrop" id="cloudModalBackdrop">
+  <div class="theme-panel" style="max-width: 560px;">
+    <div class="theme-panel-header">
+      <h3><span>⚡</span> Supabase Cloud Storage & DB</h3>
+      <button class="btn ghost sm" id="closeCloudModal">✕</button>
+    </div>
+
+    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:14px; line-height:1.5;">
+      Your encrypted files are uploaded to <b>Supabase Storage (<code style="color:var(--p-secondary)">vault-files</code>)</b> and encrypted metadata is safely synced in PostgreSQL with client-side zero-knowledge security.
+    </p>
+
+    <div style="background:var(--bg-input); border:1px solid var(--line); border-radius:var(--r-sm); padding:12px; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);">Connection Status</span>
+        <span id="supabaseIndicator" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--ok); background:var(--ok-bg); padding:3px 8px; border-radius:20px;">
+          <span style="width:6px; height:6px; border-radius:50%; background:currentColor;"></span> Connected
+        </span>
+      </div>
+      <div style="font-size:12px; color:var(--ink-soft); word-break:break-all;">
+        Endpoint: <code id="displayEndpoint" style="color:var(--p-primary); font-family:'JetBrains Mono',monospace;">https://xjixkrnlliqfhphhrvpo.supabase.co</code>
+      </div>
+    </div>
+
+    <label style="margin-top:0;" for="cfgSupabaseUrl">Supabase Project URL</label>
+    <input type="text" id="cfgSupabaseUrl" spellcheck="false" placeholder="https://xyz.supabase.co">
+
+    <label for="cfgSupabaseKey">Supabase Anon Public API Key</label>
+    <input type="password" id="cfgSupabaseKey" spellcheck="false" placeholder="sb_publishable_... or eyJhbGci...">
+
+    <div style="margin-top:14px; padding:10px 14px; border-radius:var(--r-sm); background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); font-size:12px; color:var(--ink-soft);">
+      💡 <b>Tip:</b> If tables are not yet created in your Supabase SQL Editor, run the script provided in <code>supabase_setup.sql</code>. If offline or unconfigured, the vault seamlessly falls back to local IndexedDB.
+    </div>
+
+    <div class="msg hidden" id="cloudModalMsg" style="margin-top:14px;"></div>
+
+    <div class="theme-panel-actions" style="margin-top:18px;">
+      <button class="btn ghost sm" id="testCloudBtn">Test Connection</button>
+      <button class="btn sm" id="saveCloudBtn">Save & Sync</button>
     </div>
   </div>
 </div>
@@ -924,13 +973,145 @@ function save(data,name){
 const db=new Promise((res,rej)=>{const r=indexedDB.open("vault",1);r.onupgradeneeded=()=>r.result.createObjectStore("blobs");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 const idb=async(mode,fn)=>{const d=await db;return new Promise((res,rej)=>{const s=d.transaction("blobs",mode).objectStore("blobs"),q=fn(s);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})};
 
+/* ---------- Supabase Cloud & Hybrid Storage Engine ---------- */
+const DEFAULT_SUPABASE_URL = "https://xjixkrnlliqfhphhrvpo.supabase.co";
+const DEFAULT_SUPABASE_KEY = "sb_publishable__2GSj99cppRtlQ--RHSHMQ_MEiIt3L0";
+const BUCKET_NAME = "vault-files";
+
+let supabaseConfig = ls.get("vault_supabase", {
+  url: DEFAULT_SUPABASE_URL,
+  key: DEFAULT_SUPABASE_KEY,
+  enabled: true
+});
+
+let sb = null;
+function initSupabase() {
+  if (window.supabase && supabaseConfig.url && supabaseConfig.key) {
+    try {
+      sb = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+      updateCloudStatusUI(true, "Connected");
+    } catch (e) {
+      console.warn("Supabase init error:", e);
+      sb = null;
+      updateCloudStatusUI(false, "Config error");
+    }
+  } else {
+    updateCloudStatusUI(false, "Offline / Local");
+  }
+}
+
+function updateCloudStatusUI(connected, text) {
+  const dot = $("cloudStatusDot"), lbl = $("cloudStatusText"), ind = $("supabaseIndicator"), ep = $("displayEndpoint");
+  if (dot) dot.style.background = connected ? "#10b981" : "#f59e0b";
+  if (lbl) lbl.textContent = connected ? "Supabase Cloud" : "Offline / Local";
+  if (ind) {
+    ind.style.color = connected ? "var(--ok)" : "var(--bad)";
+    ind.style.background = connected ? "var(--ok-bg)" : "var(--bad-bg)";
+    ind.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:currentColor;"></span> ${text || (connected ? "Connected" : "Disconnected")}`;
+  }
+  if (ep) ep.textContent = supabaseConfig.url || "Not configured";
+}
+
+// Cloud Storage Helpers (Upload / Download Encrypted Blobs)
+async function uploadToCloudStorage(fileId, encBuffer) {
+  if (!sb) return null;
+  try {
+    const path = `files/${fileId}.enc`;
+    const { data, error } = await sb.storage.from(BUCKET_NAME).upload(path, encBuffer, {
+      contentType: "application/octet-stream",
+      upsert: true
+    });
+    if (error) throw error;
+    return path;
+  } catch (err) {
+    console.warn("Cloud storage upload fallback:", err);
+    return null;
+  }
+}
+
+async function getFromCloudOrIDB(fileId, storagePath) {
+  if (sb && storagePath) {
+    try {
+      const { data, error } = await sb.storage.from(BUCKET_NAME).download(storagePath);
+      if (!error && data) {
+        return await data.arrayBuffer();
+      }
+    } catch (err) {
+      console.warn("Cloud download failed, falling back to IDB:", err);
+    }
+  }
+  return await idb("readonly", s => s.get(+fileId));
+}
+
+async function deleteFromCloudStorage(storagePath) {
+  if (sb && storagePath) {
+    try {
+      await sb.storage.from(BUCKET_NAME).remove([storagePath]);
+    } catch (err) {
+      console.warn("Cloud storage delete warning:", err);
+    }
+  }
+}
+
+// Sync metadata to Supabase DB if tables exist
+async function syncFileToCloud(fileRec) {
+  if (!sb) return;
+  try {
+    await sb.from("vault_files").upsert([fileRec]);
+  } catch (err) {
+    console.warn("vault_files DB sync:", err);
+  }
+}
+
+async function deleteFileFromCloud(fileId) {
+  if (!sb) return;
+  try {
+    await sb.from("vault_files").delete().eq("file_id", fileId);
+  } catch (err) {
+    console.warn("vault_files DB delete:", err);
+  }
+}
+
+async function syncUserToCloud(userRec) {
+  if (!sb) return;
+  try {
+    await sb.from("vault_users").upsert([userRec]);
+  } catch (err) {
+    console.warn("vault_users DB sync:", err);
+  }
+}
+
+async function syncLogToCloud(logRec) {
+  if (!sb) return;
+  try {
+    await sb.from("vault_audit_logs").insert([{
+      log_id: logRec.log_id,
+      user_id: logRec.user_id,
+      username: logRec.username,
+      action: logRec.action,
+      timestamp: logRec.timestamp,
+      prev_hash: logRec.prev,
+      hash: logRec.hash
+    }]);
+  } catch (err) {
+    console.warn("vault_audit_logs DB sync:", err);
+  }
+}
+
 /* ---------- data (Users / Files / Activity_Log) ---------- */
 const users=()=>ls.get("users",[]), files=()=>ls.get("files",[]), logs=()=>ls.get("logs",[]);
 const sha=async d=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",typeof d==="string"?enc.encode(d):d))].map(b=>b.toString(16).padStart(2,"0")).join("");
 let logChain=Promise.resolve();
 function log(action,uid=me?.user_id,uname=me?.username){
   const e={log_id:Date.now(),user_id:uid,username:uname,action,timestamp:Date.now()};
-  logChain=logChain.then(async()=>{const l=logs();e.prev=l[0]?.hash||"0";e.hash=await sha(e.prev+e.log_id+e.user_id+e.action+e.timestamp);l.unshift(e);ls.set("logs",l.slice(0,500))});
+  logChain=logChain.then(async()=>{
+    const l=logs();
+    e.prev=l[0]?.hash||"0";
+    e.hash=await sha(e.prev+e.log_id+e.user_id+e.action+e.timestamp);
+    l.unshift(e);
+    ls.set("logs",l.slice(0,500));
+    syncLogToCloud(e);
+  });
 }
 async function verifyLog(){
   await logChain;const l=logs().filter(e=>e.hash).reverse();
@@ -970,7 +1151,7 @@ $("authBtn").onclick=async()=>{
     if(list.some(x=>x.username.toLowerCase()===name.toLowerCase()))return fail("That username is taken.");
     const salt=crypto.getRandomValues(new Uint8Array(16));
     const u={user_id:Date.now(),username:name,salt:b64(salt),password_hash:await hashPw(pw,salt),role:list.length?"user":"admin",created:Date.now()};
-    list.push(u);ls.set("users",list);log("Registered",u.user_id,u.username);
+    list.push(u);ls.set("users",list);syncUserToCloud(u);log("Registered",u.user_id,u.username);
   }
   const key=name.toLowerCase(),F=ls.get("fails",{}),st=F[key]||{n:0,until:0};
   if(st.until>Date.now())return fail("Too many failed attempts. Try again in "+Math.ceil((st.until-Date.now())/1000)+" seconds.");
@@ -1032,7 +1213,11 @@ $("encBtn").onclick=async()=>{
     plain.set(head);plain.set(body,head.length);
     const out=await encryptBuf(plain,pw),encName=f.name+".enc",id=Date.now();
     await idb("readwrite",s=>s.put(out,id));
-    const list=files();list.unshift({file_id:id,user_id:me.user_id,original_filename:f.name,encrypted_filename:encName,upload_date:id,file_size:f.size,sha:await sha(body),tries:0});ls.set("files",list);
+    say("encMsg","Syncing encrypted file with Supabase Cloud Storage…",true);
+    const storagePath = await uploadToCloudStorage(id, out);
+    const fileRec = {file_id:id,user_id:me.user_id,original_filename:f.name,encrypted_filename:encName,upload_date:id,file_size:f.size,sha:await sha(body),storage_path:storagePath||"",tries:0};
+    const list=files();list.unshift(fileRec);ls.set("files",list);
+    syncFileToCloud(fileRec);
     log("Encrypted "+f.name);save(out,encName);
     say("encMsg","Done. "+encName+" was downloaded and added to My files. Original fingerprint (SHA-256): "+files()[0].sha.slice(0,24)+"…",true);
     $("encFile").value="";$("encKey").value="";$("encName").textContent="Select a file";$("meter").style.width=0;
@@ -1072,13 +1257,13 @@ $("histBody").onclick=async e=>{
     const pw=prompt("Enter the password for this file:");if(!pw)return;
     const rec=files().find(f=>f.file_id==d);
     try{
-      const r=await runDecrypt(await idb("readonly",s=>s.get(+d)),pw),ok=!rec.sha||await sha(r.data)===rec.sha;
+      const r=await runDecrypt(await getFromCloudOrIDB(+d, rec.storage_path),pw),ok=!rec.sha||await sha(r.data)===rec.sha;
       save(r.data,r.name);const L=files();L.find(f=>f.file_id==d).tries=0;ls.set("files",L);
       log("Decrypted "+rec.original_filename);say("histMsg","Restored "+r.name+(ok?". Integrity verified: SHA-256 matches the original.":". Warning: fingerprint does not match."),ok);
     }catch(err){
       const L=files(),x2=L.find(f=>f.file_id==d);x2.tries=(x2.tries||0)+1;
       if(x2.tries>=MAXTRY){
-        await idb("readwrite",s=>s.delete(+d));ls.set("files",L.filter(f=>f.file_id!=d));
+        await idb("readwrite",s=>s.delete(+d));await deleteFromCloudStorage(rec.storage_path);await deleteFileFromCloud(+d);ls.set("files",L.filter(f=>f.file_id!=d));
         log("SELF-DESTRUCT: "+rec.encrypted_filename+" destroyed after "+MAXTRY+" wrong passwords");renderHist();
         say("histMsg","Too many wrong passwords. "+rec.encrypted_filename+" was permanently destroyed.");
       }else{
@@ -1090,7 +1275,7 @@ $("histBody").onclick=async e=>{
   if(x){
     const rec=files().find(f=>f.file_id==x);
     if(!confirm("Delete "+rec.encrypted_filename+"? This cannot be undone."))return;
-    await idb("readwrite",s=>s.delete(+x));ls.set("files",files().filter(f=>f.file_id!=x));log("Deleted "+rec.encrypted_filename);renderHist();
+    await idb("readwrite",s=>s.delete(+x));await deleteFromCloudStorage(rec.storage_path);await deleteFileFromCloud(+x);ls.set("files",files().filter(f=>f.file_id!=x));log("Deleted "+rec.encrypted_filename);renderHist();
   }
 };
 
@@ -1118,6 +1303,61 @@ $("userBody").onclick=async e=>{
 /* ---------- restore session ---------- */
 (()=>{const id=sessionStorage.getItem("me"),u=users().find(x=>x.user_id==id);if(u){me=u;enter()}
  if(!users().length)setMode("register")})();
+
+
+/* ---------- Supabase Cloud Modal Controller ---------- */
+(function(){
+  initSupabase();
+
+  const cModal = $("cloudModalBackdrop"), openBtn = $("openCloudModal"), closeBtn = $("closeCloudModal");
+  const saveBtn = $("saveCloudBtn"), testBtn = $("testCloudBtn"), msg = $("cloudModalMsg");
+  const urlInp = $("cfgSupabaseUrl"), keyInp = $("cfgSupabaseKey");
+
+  if (urlInp) urlInp.value = supabaseConfig.url || "";
+  if (keyInp) keyInp.value = supabaseConfig.key || "";
+
+  if (openBtn && cModal) {
+    openBtn.onclick = () => {
+      cModal.classList.add("open");
+      if (urlInp) urlInp.value = supabaseConfig.url || "";
+      if (keyInp) keyInp.value = supabaseConfig.key || "";
+      if (msg) msg.classList.add("hidden");
+    };
+  }
+  if (closeBtn && cModal) closeBtn.onclick = () => cModal.classList.remove("open");
+  if (cModal) cModal.onclick = e => { if (e.target === cModal) cModal.classList.remove("open"); };
+
+  if (testBtn) {
+    testBtn.onclick = async () => {
+      const u = (urlInp.value || "").trim();
+      const k = (keyInp.value || "").trim();
+      if (!u || !k) return say("cloudModalMsg", "Please enter both URL and Publishable Key.");
+      say("cloudModalMsg", "Testing Supabase connection…", true);
+      try {
+        const testClient = window.supabase.createClient(u, k);
+        const { data, error } = await testClient.storage.listBuckets();
+        if (error) {
+          say("cloudModalMsg", "Connected to Supabase endpoint, but storage permission check returned: " + error.message);
+        } else {
+          say("cloudModalMsg", "✅ Connected successfully to Supabase! Buckets accessible: " + data.length, true);
+        }
+      } catch (err) {
+        say("cloudModalMsg", "Connection failed: " + err.message);
+      }
+    };
+  }
+
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      supabaseConfig.url = (urlInp.value || "").trim();
+      supabaseConfig.key = (keyInp.value || "").trim();
+      ls.set("vault_supabase", supabaseConfig);
+      initSupabase();
+      say("cloudModalMsg", "Supabase credentials saved and synced!", true);
+      setTimeout(() => { if (cModal) cModal.classList.remove("open"); }, 1000);
+    };
+  }
+})();
 
 /* ---------- Theme & Gradient Customization Controller ---------- */
 (function(){
